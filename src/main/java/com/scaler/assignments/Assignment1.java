@@ -1,5 +1,6 @@
 package com.scaler.assignments;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,17 +11,71 @@ import java.util.Collections;
 import java.util.List;
 
 public class Assignment1 {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         List<String> strings = new ArrayList<>();
-        strings.addAll(readFile("in1.txt"));
-        strings.addAll(readFile("in2.txt"));
-        Collections.sort(strings);
-        FileWriter fileWriter = new FileWriter("out.txt");
-        for (String str : strings) {
-            fileWriter.write(str + System.lineSeparator());
+        Thread t1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    strings.addAll(readFile("files/in1.txt"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        Thread t2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    strings.addAll(readFile("files/in2.txt"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        Thread t3 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Collections.sort(strings);
+                File dir = new File("src/main/resources/files");
+                dir.mkdirs();
+                File file = new File(dir, "out.txt");
+                if (!file.exists()){
+                    try {
+                        file.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                FileWriter fw = null;
+                try {
+                    fw = new FileWriter( file.getAbsoluteFile( ) );
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                BufferedWriter bw = new BufferedWriter( fw );
+                for (String str : strings) {
+                    try {
+                        bw.write( str+System.lineSeparator() );
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    bw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t3.start();
+        t3.join();
         }
-        fileWriter.close();
-    }
 
     private static File getResourceFile(final String fileName)
     {
